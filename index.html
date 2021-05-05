@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="frontend/index.js" defer></script>
+    <title>Document</title>
+</head>
+<body onload="getInfo()">
+    <form  method="POST" id="newForm">
+        <input type="text" placeholder="Enter Your First Name:" id="firstName">
+        <input type="text" placeholder="Enter Your Last Name:" id="lastName">
+        <input type="email" placeholder="Enter Your Email:" id="email">
+        <input type="text" placeholder="Enter Your Gender" id="gender">
+        <input type="text" placeholder="Enter Your Password" id="password">
+        <input type="button" id="submitButton" value="Submit" onclick="submitForm(event);">
+        <input type="button" id="updateButton" value="Update" onclick="updatedButtonForm();">
+        
+    </form>
+    <table>
+        <tr>
+            <th>id</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Gender</th>
+            <th>Password</th>
+        </tr>
+        <tbody id='gwapo'></tbody>
+    </table>
+    <div  id="myData"></div>
+</body>
+<script>
+    let tbody = document.getElementById("gwapo");
+    let lists = []
+    let idHoldder = [];
+    function submitForm(e){
+        httpService('POST', {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            gender: document.getElementById('gender').value,
+            password: document.getElementById('password').value
+        }, "add").then(function(item){
+            render(item)
+        })
+        document.getElementById('newForm').reset();
+        e.preventDefault()
+    }
+
+    function render(list) {
+        if (list.length === undefined) {
+            lists.push(list)
+            return tbody.innerHTML += `
+                <tr>
+                    <td>${ lists.findIndex(x => x.id == list.id)+1 }.</td>
+                    <td>${ list.firstName }</td>
+                    <td>${ list.lastName }</td>
+                    <td>${ list.email }</td>
+                    <td>${ list.gender }</td>
+                    <td>${ list.password }</td>
+                    <td><button onclick="removeData(${ list.id })">remove</button></td>
+                    <td><button onclick="editData(${ list.id }, '${ list.firstName }', '${ list.lastName }', '${ list.email }', '${ list.gender }', '${ list.password }')">edit</button></td>
+                </tr>
+            `
+        }
+        tbody.innerHTML = list.map(item => {
+            return `
+                    <tr>
+                        <td>${ list.findIndex(x => x.id == item.id)+1 }.</td>
+                        <td>${ item.firstName }</td>
+                        <td>${ item.lastName }</td>
+                        <td>${ item.email }</td>
+                        <td>${ item.gender }</td>
+                        <td>${ item.password }</td>
+                        <td><button onclick="removeData(${ item.id })">remove</button></td>
+                        <td><button onclick="editData(${ item.id }, '${ item.firstName }', '${ item.lastName }', '${ item.email }', '${ item.gender }', '${ item.password }')">edit</button></td>
+                    </tr>
+                `
+        }).join('')
+    }
+    function getInfo(){
+        httpService('GET', "", "add")
+        .then(function(response){
+            lists = response
+            render(lists)
+        })
+        document.getElementById('updateButton').style.visibility = 'hidden';
+    }
+    function removeData(id){
+        httpService('POST', { id }, 'remove')
+        .then(function(response){
+            lists.splice(lists.findIndex(x => x.id == id), 1)
+            render(lists)
+        })
+    }
+    function editData(id, firstName, lastName, email, gender, password){
+        idHoldder = [];
+        idHoldder.push(id);
+        document.getElementById('firstName').value = firstName;
+        document.getElementById('lastName').value = lastName;
+        document.getElementById('email').value = email;
+        document.getElementById('gender').value = gender;
+        document.getElementById('password').value = password;
+        document.getElementById('submitButton').style.visibility = 'hidden';
+        document.getElementById('updateButton').style.visibility = 'visible';
+    }
+    function updatedButtonForm(){
+        httpService('POST', {
+            id: idHoldder[0],
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            gender: document.getElementById('gender').value,
+            password: document.getElementById('password').value
+        }, 'infoUpdatedData')
+        .then(function(response){
+            if (response.message == 'updated') {
+                getInfo();
+            }
+        })
+        document.getElementById('newForm').reset();
+        document.getElementById('submitButton').style.visibility = 'visible';
+        document.getElementById('updateButton').style.visibility = 'hidden';
+    }
+</script>
+</html>
